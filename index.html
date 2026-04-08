@@ -76,9 +76,9 @@
         // 3. Твоя формула из Excel:
         // F = PI() * (r0^2) * (P-P0) * (3/(TAN(a0))^2 * (1-eps)^2 - 1/(SIN(a0))^2)
         
-        const term1 = 3 / Math.pow(Math.tan(alpha0_rad), 2);
-        const term2 = Math.pow((1 - eps), 2);
-        const term3 = 1 / Math.pow(Math.sin(alpha0_rad), 2);
+        const term1 = 3 / Math.pow(Math.tan(alpha0_rad), 2);//a
+        const term2 = Math.pow((1 - eps), 2);//скобка Е
+        const term3 = 1 / Math.pow(Math.sin(alpha0_rad), 2);//b
         
         const force = Math.PI * Math.pow(r0_m, 2) * (p_pa - p0_pa) * (term1 * term2 - term3);
 
