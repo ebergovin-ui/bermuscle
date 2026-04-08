@@ -1,20 +1,19 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BerMuscle - Калькулятор силы</title>
+    <title>BerMuscle - Force Calculator</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .card { background: #1e293b; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 100%; max-width: 450px; border: 1px solid #334155; }
         h1 { color: #38bdf8; text-align: center; margin-bottom: 25px; font-size: 24px; }
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-size: 13px; color: #94a3b8; }
-        input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; font-size: 15px; outline: none; transition: 0.3s; }
+        input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; font-size: 15px; outline: none; }
         input:focus { border-color: #38bdf8; }
-        button { width: 100%; padding: 14px; background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; transition: 0.3s; }
-        button:hover { background: #0ea5e9; transform: translateY(-2px); }
-        .result { margin-top: 25px; padding: 20px; background: #334155; border-radius: 10px; text-align: center; border: 1px solid #38bdf8; display: none; }
+        button { width: 100%; padding: 14px; background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; }
+        .result { margin-top: 25px; padding: 20px; background: #334155; border-radius: 10px; text-align: center; border: 1px solid #38bdf8; }
         .force-val { font-size: 32px; font-weight: bold; color: #38bdf8; display: block; }
         .unit { font-size: 14px; color: #94a3b8; }
     </style>
@@ -25,57 +24,66 @@
     <h1>BerMuscle Calc</h1>
     
     <div class="input-group">
-        <label>Длина мускула L0 (м)</label>
-        <input type="number" id="l0" value="0.27" step="0.01">
+        <label>Initial Length L0 (cm)</label>
+        <input type="number" id="l0" value="27">
     </div>
     <div class="input-group">
-        <label>Радиус r0 (м)</label>
-        <input type="number" id="r0" value="0.0079" step="0.0001">
+        <label>Initial Radius r0 (mm)</label>
+        <input type="number" id="r0" value="5.5" step="0.1">
     </div>
     <div class="input-group">
-        <label>Угол нитей (градусы)</label>
-        <input type="number" id="alpha" value="23">
+        <label>Initial Angle alpha0 (degrees)</label>
+        <input type="number" id="alpha" value="27">
     </div>
     <div class="input-group">
-        <label>Давление в системе P (Па)</label>
-        <input type="number" id="p_total" value="280000">
+        <label>Working Pressure P (MPa)</label>
+        <input type="number" id="p_total" value="0.2" step="0.01">
     </div>
     <div class="input-group">
-        <label>Давление раздутия P0 (Па)</label>
-        <input type="number" id="p0" value="31000">
+        <label>Threshold Pressure P0 (MPa)</label>
+        <input type="number" id="p0" value="0.11" step="0.01">
     </div>
     <div class="input-group">
-        <label>Деформация ε (например 0.31)</label>
-        <input type="number" id="eps" value="0.31" step="0.01">
+        <label>Strain epsilon ε (%)</label>
+        <input type="number" id="eps" value="0">
     </div>
 
-    <button onclick="calculate()">ВЫЧИСЛИТЬ СИЛУ</button>
+    <button onclick="calculate()">CALCULATE FORCE</button>
 
     <div class="result" id="resultBlock">
-        <span class="unit">Теоретическая сила тяги:</span>
-        <span class="force-val" id="forceResult">0</span>
-        <span class="unit">Ньютонов (Н)</span>
+        <span class="unit">Theoretical Pulling Force:</span>
+        <span class="force-val" id="forceResult">0.00</span>
+        <span class="unit">Newtons (N)</span>
     </div>
 </div>
 
 <script>
     function calculate() {
-        const r0 = parseFloat(document.getElementById('r0').value);
-        const alphaDeg = parseFloat(document.getElementById('alpha').value);
-        const pTotal = parseFloat(document.getElementById('p_total').value);
-        const p0 = parseFloat(document.getElementById('p0').value);
-        const eps = parseFloat(document.getElementById('eps').value);
+        // 1. Считываем данные из окон (как в твоей желтой колонке Excel)
+        const r0_mm = parseFloat(document.getElementById('r0').value);
+        const alpha0_deg = parseFloat(document.getElementById('alpha').value);
+        const p_mpa = parseFloat(document.getElementById('p_total').value);
+        const p0_mpa = parseFloat(document.getElementById('p0').value);
+        const eps_percent = parseFloat(document.getElementById('eps').value);
 
-        const alphaRad = alphaDeg * Math.PI / 180;
-        const a = 3 / Math.pow(Math.tan(alphaRad), 2);
-        const b = 1 / Math.pow(Math.sin(alphaRad), 2);
-        const pEff = pTotal - p0;
+        // 2. Переводим в СИ (метры, радианы, паскали)
+        const r0_m = r0_mm / 1000;
+        const alpha0_rad = alpha0_deg * Math.PI / 180;
+        const p_pa = p_mpa * 1000000;
+        const p0_pa = p0_mpa * 1000000;
+        const eps = eps_percent / 100; // если вводишь 31, станет 0.31
 
-        // Формула Тонду-Лопеса
-        const force = Math.PI * Math.pow(r0, 2) * pEff * (a * Math.pow((1 - eps), 2) - b);
+        // 3. Твоя формула из Excel:
+        // F = PI() * (r0^2) * (P-P0) * (3/(TAN(a0))^2 * (1-eps)^2 - 1/(SIN(a0))^2)
+        
+        const term1 = 3 / Math.pow(Math.tan(alpha0_rad), 2);
+        const term2 = Math.pow((1 - eps), 2);
+        const term3 = 1 / Math.pow(Math.sin(alpha0_rad), 2);
+        
+        const force = Math.PI * Math.pow(r0_m, 2) * (p_pa - p0_pa) * (term1 * term2 - term3);
 
+        // 4. Вывод результата
         document.getElementById('forceResult').innerText = force.toFixed(2);
-        document.getElementById('resultBlock').style.display = 'block';
     }
 </script>
 
