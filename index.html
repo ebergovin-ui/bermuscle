@@ -19,7 +19,8 @@
         .result { margin-top: 20px; padding: 15px; background: #262626; border-radius: 8px; text-align: center; border: 1px solid #444; }
         .res-label { font-size: 13px; color: #aaaaaa; display: block; margin-bottom: 5px; }
         .res-val { font-size: 28px; font-weight: bold; color: #ffeb3b; }
-        .warning { color: #ff5252; font-size: 12px; margin-top: 10px; font-weight: bold; display: none; text-align: center; }
+        /* Стиль для предупреждений */
+        .warning { color: #ff5252; font-size: 12px; margin-top: 10px; font-weight: bold; display: none; text-align: center; padding: 8px; background: rgba(255, 82, 82, 0.1); border-radius: 4px; border: 1px solid #ff5252; }
         #work-card { border: 2px solid #ffeb3b; }
     </style>
 </head>
@@ -35,7 +36,11 @@
         <div class="input-group"><label>Working Pressure P (MPa)</label><input type="number" id="f_p" step="0.001" value="0.3"></div>
         <div class="input-group"><label>Starting pressure, MPa</label><input type="number" id="f_p0" step="0.001" value="0.053"></div>
         <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="f_eps" value="4"></div>
+        
         <button onclick="calcForce()">CALCULATE FORCE</button>
+        
+        <div id="f_warn_eps" class="warning">Warning: Strain ε > 50% is unlikely!</div>
+
         <div class="result">
             <span class="res-label">Resulting Force:</span>
             <span class="res-val" id="res_f">0.00</span> <span style="color:#ffeb3b">N</span>
@@ -50,7 +55,12 @@
         <div class="input-group"><label>Load Mass (kg)</label><input type="number" id="p_mass" value="5"></div>
         <div class="input-group"><label>Starting pressure, MPa</label><input type="number" id="p_p0" step="0.001" value="0.053"></div>
         <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="p_eps" value="4"></div>
+        
         <button onclick="calcPressure()">CALCULATE PRESSURE</button>
+        
+        <div id="p_warn_eps" class="warning">Warning: Strain ε > 50% is unlikely!</div>
+        <div id="p_warn_safety" class="warning">CRITICAL: Pressure > 0.3 MPa! Check shell strength.</div>
+
         <div class="result">
             <span class="res-label">Required Pressure:</span>
             <span class="res-val" id="res_p">0.000</span> <span style="color:#ffeb3b">MPa</span>
@@ -78,8 +88,12 @@
             const a0 = parseFloat(document.getElementById('f_alpha').value) * Math.PI / 180;
             const p = parseFloat(document.getElementById('f_p').value) * 1000000;
             const p0 = parseFloat(document.getElementById('f_p0').value) * 1000000;
-            const eps = parseFloat(document.getElementById('f_eps').value) / 100;
+            const epsRaw = parseFloat(document.getElementById('f_eps').value);
 
+            // Ограничение эпсилон
+            document.getElementById('f_warn_eps').style.display = epsRaw > 50 ? 'block' : 'none';
+            
+            const eps = epsRaw / 100;
             const t1 = 3 / Math.pow(Math.tan(a0), 2);
             const t2 = Math.pow((1 - eps), 2);
             const t3 = 1 / Math.pow(Math.sin(a0), 2);
@@ -94,9 +108,13 @@
             const a0 = parseFloat(document.getElementById('p_alpha').value) * Math.PI / 180;
             const mass = parseFloat(document.getElementById('p_mass').value);
             const p0_m = parseFloat(document.getElementById('p_p0').value);
-            const eps = parseFloat(document.getElementById('p_eps').value) / 100;
+            const epsRaw = parseFloat(document.getElementById('p_eps').value);
 
+            // Ограничение эпсилон
+            document.getElementById('p_warn_eps').style.display = epsRaw > 50 ? 'block' : 'none';
+            
             const F_load = mass * g;
+            const eps = epsRaw / 100;
             const t1 = 3 / Math.pow(Math.tan(a0), 2);
             const t2 = Math.pow((1 - eps), 2);
             const t3 = 1 / Math.pow(Math.sin(a0), 2);
@@ -105,7 +123,97 @@
             if (geom > 0) {
                 const p_pa = F_load / (Math.PI * Math.pow(r0, 2) * geom) + (p0_m * 1000000);
                 const p_mpa = p_pa / 1000000;
+                
                 document.getElementById('res_p').innerText = p_mpa.toFixed(3);
+                
+                // Ограничение по давлению
+                document.getElementById('p_warn_safety').style.display = p_mpa > 0.3 ? 'block' : 'none';
+                
+                const work = F_load * (l0 / 1000 * eps);
+                document.getElementById('res_work').innerText = work.toFixed(2);
+            } else {
+                document.getElementById('res_p').innerText = "Error";
+                document.getElementById('res_work').innerText = "—";
+            }
+        }
+    </script>
+</body>
+</html><div class="input-group"><label>Load Mass (kg)</label><input type="number" id="p_mass" value="5"></div>
+        <div class="input-group"><label>Starting pressure, MPa</label><input type="number" id="p_p0" step="0.001" value="0.053"></div>
+        <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="p_eps" value="4"></div>
+        
+        <button onclick="calcPressure()">CALCULATE PRESSURE</button>
+        
+        <div id="p_warn_eps" class="warning">Warning: Strain ε > 50% is unlikely!</div>
+        <div id="p_warn_safety" class="warning">CRITICAL: Pressure > 0.3 MPa! Check shell strength.</div>
+
+        <div class="result">
+            <span class="res-label">Required Pressure:</span>
+            <span class="res-val" id="res_p">0.000</span> <span style="color:#ffeb3b">MPa</span>
+        </div>
+    </div>
+
+    <div class="card" id="work-card">
+        <h2>3. Mechanical Work</h2>
+        <div class="result">
+            <span class="res-label">Estimated Work (F_load * ΔL):</span>
+            <span class="res-val" id="res_work">—</span> <span style="color:#ffeb3b">J</span>
+        </div>
+    </div>
+
+    <script>
+        const g = 9.81;
+
+        function runAll() {
+            calcForce();
+            calcPressure();
+        }
+
+        function calcForce() {
+            const r0 = parseFloat(document.getElementById('f_r0').value) / 1000;
+            const a0 = parseFloat(document.getElementById('f_alpha').value) * Math.PI / 180;
+            const p = parseFloat(document.getElementById('f_p').value) * 1000000;
+            const p0 = parseFloat(document.getElementById('f_p0').value) * 1000000;
+            const epsRaw = parseFloat(document.getElementById('f_eps').value);
+
+            // Ограничение эпсилон
+            document.getElementById('f_warn_eps').style.display = epsRaw > 50 ? 'block' : 'none';
+            
+            const eps = epsRaw / 100;
+            const t1 = 3 / Math.pow(Math.tan(a0), 2);
+            const t2 = Math.pow((1 - eps), 2);
+            const t3 = 1 / Math.pow(Math.sin(a0), 2);
+            const force = Math.PI * Math.pow(r0, 2) * (p - p0) * (t1 * t2 - t3);
+            
+            document.getElementById('res_f').innerText = (force > 0 ? force.toFixed(2) : "0.00");
+        }
+
+        function calcPressure() {
+            const l0 = parseFloat(document.getElementById('p_l0').value);
+            const r0 = parseFloat(document.getElementById('p_r0').value) / 1000;
+            const a0 = parseFloat(document.getElementById('p_alpha').value) * Math.PI / 180;
+            const mass = parseFloat(document.getElementById('p_mass').value);
+            const p0_m = parseFloat(document.getElementById('p_p0').value);
+            const epsRaw = parseFloat(document.getElementById('p_eps').value);
+
+            // Ограничение эпсилон
+            document.getElementById('p_warn_eps').style.display = epsRaw > 50 ? 'block' : 'none';
+            
+            const F_load = mass * g;
+            const eps = epsRaw / 100;
+            const t1 = 3 / Math.pow(Math.tan(a0), 2);
+            const t2 = Math.pow((1 - eps), 2);
+            const t3 = 1 / Math.pow(Math.sin(a0), 2);
+            const geom = (t1 * t2 - t3);
+
+            if (geom > 0) {
+                const p_pa = F_load / (Math.PI * Math.pow(r0, 2) * geom) + (p0_m * 1000000);
+                const p_mpa = p_pa / 1000000;
+                
+                document.getElementById('res_p').innerText = p_mpa.toFixed(3);
+                
+                // Ограничение по давлению
+                document.getElementById('p_warn_safety').style.display = p_mpa > 0.3 ? 'block' : 'none';
                 
                 const work = F_load * (l0 / 1000 * eps);
                 document.getElementById('res_work').innerText = work.toFixed(2);
