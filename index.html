@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BerMuscle Engineering Hub</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>BERMUSCLE CALCULATOR</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; margin: 0; }
         h1 { color: #ffeb3b; text-align: center; margin-bottom: 30px; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #ffeb3b; padding-bottom: 10px; }
@@ -34,7 +34,7 @@
 </head>
 <body>
 
-    <h1>BerMuscle Engineering Hub</h1>
+    <h1>BERMUSCLE CALCULATOR</h1>
 
     <div class="card">
         <h2>1. Force Calculation</h2>
@@ -148,78 +148,110 @@
 
         // --- Основная функция первого блока (Интерфейс + График) ---
         function uiCalculateForce() {
-            const l0 = parseFloat(document.getElementById('f_l0').value);
-            const r0 = parseFloat(document.getElementById('f_r0').value);
-            const a0 = parseFloat(document.getElementById('f_alpha').value);
-            const p = parseFloat(document.getElementById('f_p').value);
-            const p0 = parseFloat(document.getElementById('f_p0').value);
-            const eps = parseFloat(document.getElementById('f_eps').value);
+            // Получаем элементы интерфейса
+            const l0Input = document.getElementById('f_l0');
+            const r0Input = document.getElementById('f_r0');
+            const a0Input = document.getElementById('f_alpha');
+            const pInput = document.getElementById('f_p');
+            const p0Input = document.getElementById('f_p0');
+            const epsInput = document.getElementById('f_eps');
+
+            if (!l0Input  !r0Input  !a0Input  !pInput  !p0Input || !epsInput) return;
+            const l0 = parseFloat(l0Input.value);
+            const r0 = parseFloat(r0Input.value);
+            const a0 = parseFloat(a0Input.value);
+            const p = parseFloat(pInput.value);
+            const p0 = parseFloat(p0Input.value);
+            const eps = parseFloat(epsInput.value);
 
             // Проверка эпсилон
             document.getElementById('f_warn').style.display = eps > 50 ? 'block' : 'none';
+
             // Расчет точки
             const maxForce = calculateForceRaw(r0, a0, p, p0, eps);
-            document.getElementById('res_f').innerText = maxForce.toFixed(2);
+            document.getElementById('res_f').innerText = maxForce > 0 ? maxForce.toFixed(2) : "0.00";
 
             // --- Построение графика ---
             const chartSection = document.getElementById('chart-section');
+            if (!chartSection) return;
             chartSection.style.display = 'block';
 
-            const ctx = document.getElementById('forceChart').getContext('with');
+            const canvas = document.getElementById('forceChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
             
-            // Генерируем данные для графика (от 0 до введенного P)
+            // Генерируем данные для графика (от P0 до введенного P)
             const pressures = [];
             const forces = [];
             const steps = 10;
+            
+            // Простая валидация, чтобы избежать деления на ноль при p0 == p
+            const pRange = (p > p0) ? (p - p0) : 0.01;
+
             for (let i = 0; i <= steps; i++) {
-                const currentP = p0 + (i * (p - p0) / steps);
+                const currentP = p0 + (i * pRange / steps);
                 pressures.push(currentP.toFixed(2));
-                forces.push(calculateForceRaw(r0, a0, currentP, p0, eps).toFixed(2));
+                const currentF = calculateForceRaw(r0, a0, currentP, p0, eps);
+                forces.push(currentF > 0 ? currentF.toFixed(2) : 0);
             }
 
             // Если график уже есть, уничтожаем старый
             if (forceChart) { forceChart.destroy(); }
 
             // Создаем новый график
-            forceChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: pressures,
-                    datasets: [{
-                        label: 'Force (N)',
-                        data: forces,
-                        borderColor: '#007bff',
-                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                        borderWith: 2,
-                        tension: 0.3,
-                        fill: true,
-                        pointBackgroundColor: '#ffeb3b',
-                        pointBorderColor: '#121212'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: { title: { display: true, text: 'Pressure (MPa)', color: '#aaaaaa' }, ticks: { color: '#aaaaaa' }, grid: { color: '#333' } },
-                        y: { title: { display: true, text: 'Force (N)', color: '#aaaaaa' }, ticks: { color: '#aaaaaa' }, grid: { color: '#333' }, beginAtZero: true }
+            try {
+                forceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: pressures,
+                        datasets: [{
+                            label: 'Force (N)',
+                            data: forces,
+                            borderColor: '#007bff',
+                            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                            borderWith: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#ffeb3b',
+                            pointBorderColor: '#121212'
+                        }]
                     },
-                    plugins: { legend: { display: false } }
-                }
-            });
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: { title: { display: true, text: 'Pressure (MPa)', color: '#aaaaaa' }, ticks: { color: '#aaaaaa' }, grid: { color: '#333' } },
+                            y: { title: { display: true, text: 'Force (N)', color: '#aaaaaa' }, ticks: { color: '#aaaaaa' }, grid: { color: '#333' }, beginAtZero: true }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } catch (error) {
+                console.error("Chart creation failed:", error);
+            }
         }
 
         // --- Основная функция второго блока (Давление + Работа) ---
         function uiCalculatePressure() {
-            const l0 = parseFloat(document.getElementById('p_l0').value);
-            const r0_m = parseFloat(document.getElementById('p_r0').value) / 1000;
-            const a0 = parseFloat(document.getElementById('p_alpha').value) * Math.PI / 180;
-            const mass = parseFloat(document.getElementById('p_mass').value);
-            const p0_mpa = parseFloat(document.getElementById('p_p0').value);
-            const epsInput = parseFloat(document.getElementById('p_eps').value);
+            const l0Input = document.getElementById('p_l0');
+            const r0Input = document.getElementById('p_r0');
+            const a0Input = document.getElementById('p_alpha');
+            const massInput = document.getElementById('p_mass');
+            const p0Input = document.getElementById('p_p0');
+            const epsInput = document.getElementById('p_eps');
+
+            if (!l0Input  !r0Input  !a0Input  !massInput  !p0Input || !epsInput) return;
+
+            const l0 = parseFloat(l0Input.value);
+            const r0_m = parseFloat(r0Input.value) / 1000;
+            const a0 = parseFloat(a0Input.value) * Math.PI / 180;
+            const mass = parseFloat(massInput.value);
+            const p0_mpa = parseFloat(p0Input.value);
+            const epsRaw = parseFloat(epsInput.value);
 
             // Проверка эпсилон
-            document.getElementById('p_warn_eps').style.display = epsInput > 50 ? 'block' : 'none';
-            const eps = epsInput / 100;
+            document.getElementById('p_warn_eps').style.display = epsRaw > 50 ? 'block' : 'none';
+            const eps = epsRaw / 100;
 
             const F_load = mass * g;
             
@@ -230,22 +262,29 @@
             const geom = (term1 * term2 - term3);
 
             // Расчет давления
+            const resPField = document.getElementById('res_p');
+            if (geom <= 0) {
+                resPField.innerText = "Error (geom)";
+                document.getElementById('work-card').style.display = 'none';
+                return;
+            }
+
             const p_req_pa = F_load / (Math.PI * Math.pow(r0_m, 2) * geom) + (p0_mpa * 1000000);
             const p_req_mpa = p_req_pa / 1000000;
 
             // Вывод давления
-            const resPField = document.getElementById('res_p');
-            if (p_req_mpa > 0 && p_req_mpa < 10) { // Валидация разумного диапазона
+            if (p_req_mpa > 0 && p_req_mpa < 100) { // Валидация разумного диапазона
                 resPField.innerText = p_req_mpa.toFixed(3);
                 document.getElementById('p_warn_safety').style.display = p_req_mpa > 0.3 ? 'block' : 'none';
+                
                 // --- Расчет работы ---
-                const deltaL_m = (l0 / 1000) * eps; // Изменение длины в метрах
+                const deltaL_m = (l0 / 1000) * (epsRaw / 100); // Изменение длины в метрах
                 const work_j = F_load * deltaL_m;
                 
                 document.getElementById('work-card').style.display = 'block';
                 document.getElementById('res_work').innerText = work_j.toFixed(2);
             } else {
-                resPField.innerText = "Error";
+                resPField.innerText = "Error (phys)";
                 document.getElementById('work-card').style.display = 'none';
             }
         }
