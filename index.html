@@ -1,91 +1,66 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BerMuscle - Force Calculator</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 100%; max-width: 450px; border: 1px solid #334155; }
-        h1 { color: #38bdf8; text-align: center; margin-bottom: 25px; font-size: 24px; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-size: 13px; color: #94a3b8; }
-        input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; font-size: 15px; outline: none; }
-        input:focus { border-color: #38bdf8; }
-        button { width: 100%; padding: 14px; background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; }
-        .result { margin-top: 25px; padding: 20px; background: #334155; border-radius: 10px; text-align: center; border: 1px solid #38bdf8; }
-        .force-val { font-size: 32px; font-weight: bold; color: #38bdf8; display: block; }
-        .unit { font-size: 14px; color: #94a3b8; }
-    </style>
-</head>
-<body>
-
-<div class="card">
-    <h1>BerMuscle Calculator</h1>
-    
-    <div class="input-group">
-        <label>Initial Length L0 (cm)</label>
-        <input type="number" id="l0" value="27">
-    </div>
-    <div class="input-group">
-        <label>Initial Radius r0 (mm)</label>
-        <input type="number" id="r0" value="5.5" step="0.1">
-    </div>
-    <div class="input-group">
-        <label>Initial Angle alpha0 (degrees)</label>
-        <input type="number" id="alpha" value="27">
-    </div>
-    <div class="input-group">
-        <label>Working Pressure P (MPa)</label>
-        <input type="number" id="p_total" value="0.2" step="0.01">
-    </div>
-    <div class="input-group">
-        <label>Starting pressure P0 (for inflating the balloon)  (MPa)</label>
-        <input type="number" id="p0" value="0.11" step="0.01">
-    </div>
-    <div class="input-group">
-        <label>Strain epsilon ε (%)</label>
-        <input type="number" id="eps" value="0">
+<div class="input-group">
+            <label>Strain epsilon ε (%)</label>
+            <input type="number" id="p_eps" value="10">
+        </div>
+        <button onclick="calcPressure()">CALCULATE PRESSURE</button>
+        <div id="p_warn_eps" class="warning">Your air muscle is not capable of contracting like that (the epsilon will be smaller)</div>
+        <div id="p_warn_safety" class="warning">Check the parameters of your cable sheath, it may not withstand!</div>
+        <div class="result">
+            <span class="unit">Required Pressure:</span>
+            <span class="force-val" id="res_pressure">0.00</span>
+            <span class="unit">MegaPascals (MPa)</span>
+        </div>
     </div>
 
-    <button onclick="calculate()">CALCULATE FORCE</button>
+    <script>
+        const g = 9.81;
 
-    <div class="result" id="resultBlock">
-        <span class="unit">Theoretical Pulling Force:</span>
-        <span class="force-val" id="forceResult">0.00</span>
-        <span class="unit">Newtons (N)</span>
-    </div>
-</div>
+        function calcForce() {
+            const r0 = parseFloat(document.getElementById('f_r0').value) / 1000;
+            const a0 = parseFloat(document.getElementById('f_alpha').value) * Math.PI / 180;
+            const p = parseFloat(document.getElementById('f_p').value) * 1000000;
+            const p0 = parseFloat(document.getElementById('f_p0').value) * 1000000;
+            const eps_val = parseFloat(document.getElementById('f_eps').value);
+            
+            // Check epsilon limit
+            document.getElementById('f_warn_eps').style.display = eps_val > 50 ? 'block' : 'none';
+            const eps = eps_val / 100;
 
-<script>
-    function calculate() {
-        // 1. Считываем данные из окон (как в твоей желтой колонке Excel)
-        const r0_mm = parseFloat(document.getElementById('r0').value);
-        const alpha0_deg = parseFloat(document.getElementById('alpha').value);
-        const p_mpa = parseFloat(document.getElementById('p_total').value);
-        const p0_mpa = parseFloat(document.getElementById('p0').value);
-        const eps_percent = parseFloat(document.getElementById('eps').value);
+            const term1 = 3 / Math.pow(Math.tan(a0), 2);
+            const term2 = Math.pow((1 - eps), 2);
+            const term3 = 1 / Math.pow(Math.sin(a0), 2);
 
-        // 2. Переводим в СИ (метры, радианы, паскали)
-        const r0_m = r0_mm / 1000;
-        const alpha0_rad = alpha0_deg * Math.PI / 180;
-        const p_pa = p_mpa * 1000000;
-        const p0_pa = p0_mpa * 1000000;
-        const eps = eps_percent / 100; // если вводишь 31, станет 0.31
+            const force = Math.PI * Math.pow(r0, 2) * (p - p0) * (term1 * term2 - term3);
+            document.getElementById('res_force').innerText = force > 0 ? force.toFixed(2) : "0.00";
+        }
 
-        // 3. Твоя формула из Excel:
-        // F = PI() * (r0^2) * (P-P0) * (3/(TAN(a0))^2 * (1-eps)^2 - 1/(SIN(a0))^2)
-        
-        const term1 = 3 / Math.pow(Math.tan(alpha0_rad), 2);//a
-        const term2 = Math.pow((1 - eps), 2);//скобка Е
-        const term3 = 1 / Math.pow(Math.sin(alpha0_rad), 2);//b
-        
-        const force = Math.PI * Math.pow(r0_m, 2) * (p_pa - p0_pa) * (term1 * term2 - term3);
+        function calcPressure() {
+            const r0 = parseFloat(document.getElementById('p_r0').value) / 1000;
+            const a0 = parseFloat(document.getElementById('p_alpha').value) * Math.PI / 180;
+            const mass = parseFloat(document.getElementById('p_mass').value);
+            const p0_mpa = parseFloat(document.getElementById('p_p0').value);
+            const p0 = p0_mpa * 1000000;
+            const eps_val = parseFloat(document.getElementById('p_eps').value);
 
-        // 4. Вывод результата
-        document.getElementById('forceResult').innerText = force.toFixed(2);
-    }
-</script>
+            // Check epsilon limit
+            document.getElementById('p_warn_eps').style.display = eps_val > 50 ? 'block' : 'none';
+            const eps = eps_val / 100;
 
+            const F = mass * g;
+            const term1 = 3 / Math.pow(Math.tan(a0), 2);
+            const term2 = Math.pow((1 - eps), 2);
+            const term3 = 1 / Math.pow(Math.sin(a0), 2);
+
+            // Обратный расчет давления: P = F / (pi * r0^2 * (geom_terms)) + P0
+            const geom = (term1 * term2 - term3);
+            const p_req_pa = F / (Math.PI * Math.pow(r0, 2) * geom) + p0;
+            const p_req_mpa = p_req_pa / 1000000;
+
+            // Check pressure safety
+            document.getElementById('p_warn_safety').style.display = p_req_mpa > 0.3 ? 'block' : 'none';
+
+            document.getElementById('res_pressure').innerText = p_req_mpa > 0 ? p_req_mpa.toFixed(3) : "Error";
+        }
+    </script>
 </body>
 </html>
