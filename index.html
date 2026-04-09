@@ -14,32 +14,28 @@
         label { display: block; margin-bottom: 5px; font-size: 13px; color: #aaaaaa; }
         input { width: 100%; padding: 12px; background: #2c2c2c; border: 1px solid #444; border-radius: 6px; color: #ffffff; font-size: 15px; outline: none; box-sizing: border-box; }
         input:focus { border-color: #ffeb3b; }
-        input::placeholder { color: #666; }
         button { width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 15px; font-weight: bold; text-transform: uppercase; }
         button:hover { background: #0056b3; }
         .result { margin-top: 20px; padding: 15px; background: #262626; border-radius: 8px; text-align: center; border: 1px solid #444; }
         .res-label { font-size: 13px; color: #aaaaaa; display: block; margin-bottom: 5px; }
         .res-val { font-size: 28px; font-weight: bold; color: #ffeb3b; }
         .warning { color: #ff5252; font-size: 12px; margin-top: 10px; font-weight: bold; display: none; text-align: center; }
-        #work-card { border: 2px dashed #444; }
+        #work-card { border: 2px solid #ffeb3b; }
     </style>
 </head>
-<body>
+<body onload="runAll()">
 
     <h1>BERMUSCLE CALCULATOR</h1>
 
     <div class="card">
         <h2>1. Force Calculation</h2>
-        <div class="input-group"><label>Initial Length L0 (mm)</label><input type="number" id="f_l0" placeholder="e.g. 270"></div>
-        <div class="input-group"><label>Initial Radius r0 (mm)</label><input type="number" id="f_r0" step="0.1" placeholder="e.g. 5.5"></div>
-        <div class="input-group"><label>Initial Angle alpha0 (deg)</label><input type="number" id="f_alpha" placeholder="e.g. 27"></div>
-        <div class="input-group"><label>Working Pressure P (MPa)</label><input type="number" id="f_p" step="0.01" placeholder="e.g. 0.2"></div>
-        <div class="input-group"><label>Starting pressure, MPa</label><input type="number" id="f_p0" step="0.01" placeholder="e.g. 0.11"></div>
-        <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="f_eps" placeholder="e.g. 10"></div>
-
+        <div class="input-group"><label>Initial Length L0 (mm)</label><input type="number" id="f_l0" value="270"></div>
+        <div class="input-group"><label>Initial Radius r0 (mm)</label><input type="number" id="f_r0" step="0.01" value="2.25"></div>
+        <div class="input-group"><label>Initial Angle alpha0 (deg)</label><input type="number" id="f_alpha" value="24"></div>
+        <div class="input-group"><label>Working Pressure P (MPa)</label><input type="number" id="f_p" step="0.001" value="0.3"></div>
+        <div class="input-group"><label>Starting pressure, MPa</label><input type="number" id="f_p0" step="0.001" value="0.053"></div>
+        <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="f_eps" value="4"></div>
         <button onclick="calcForce()">CALCULATE FORCE</button>
-        <div id="f_warn" class="warning">Warning: Strain ε > 50% is unlikely.</div>
-
         <div class="result">
             <span class="res-label">Resulting Force:</span>
             <span class="res-val" id="res_f">0.00</span> <span style="color:#ffeb3b">N</span>
@@ -48,17 +44,13 @@
 
     <div class="card">
         <h2>2. Pressure Calculation</h2>
-        <div class="input-group"><label>Initial Length L0 (mm)</label><input type="number" id="p_l0" placeholder="e.g. 270"></div>
-        <div class="input-group"><label>Initial Radius r0 (mm)</label><input type="number" id="p_r0" step="0.1" placeholder="e.g. 5.5"></div>
-        <div class="input-group"><label>Initial Angle alpha0 (deg)</label><input type="number" id="p_alpha" placeholder="e.g. 27"></div>
-        <div class="input-group"><label>Load Mass (kg)</label><input type="number" id="p_mass" placeholder="e.g. 5"></div>
-        <div class="input-group"><label>Starting pressure, MPa</label><input type="number" id="p_p0" step="0.01" placeholder="e.g. 0.11"></div>
-        <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="p_eps" placeholder="e.g. 10"></div>
-
+        <div class="input-group"><label>Initial Length L0 (mm)</label><input type="number" id="p_l0" value="270"></div>
+        <div class="input-group"><label>Initial Radius r0 (mm)</label><input type="number" id="p_r0" step="0.01" value="2.25"></div>
+        <div class="input-group"><label>Initial Angle alpha0 (deg)</label><input type="number" id="p_alpha" value="24"></div>
+        <div class="input-group"><label>Load Mass (kg)</label><input type="number" id="p_mass" value="5"></div>
+        <div class="input-group"><label>Starting pressure, MPa</label><input type="number" id="p_p0" step="0.001" value="0.053"></div>
+        <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="p_eps" value="4"></div>
         <button onclick="calcPressure()">CALCULATE PRESSURE</button>
-        <div id="p_warn_eps" class="warning">Warning: Strain ε > 50% is unlikely.</div>
-        <div id="p_warn_safety" class="warning">CRITICAL: Pressure > 0.3 MPa!</div>
-
         <div class="result">
             <span class="res-label">Required Pressure:</span>
             <span class="res-val" id="res_p">0.000</span> <span style="color:#ffeb3b">MPa</span>
@@ -76,26 +68,24 @@
     <script>
         const g = 9.81;
 
+        function runAll() {
+            calcForce();
+            calcPressure();
+        }
+
         function calcForce() {
-            // Прямое получение значений без лишних проверок
             const r0 = parseFloat(document.getElementById('f_r0').value) / 1000;
             const a0 = parseFloat(document.getElementById('f_alpha').value) * Math.PI / 180;
             const p = parseFloat(document.getElementById('f_p').value) * 1000000;
             const p0 = parseFloat(document.getElementById('f_p0').value) * 1000000;
-            const epsRaw = parseFloat(document.getElementById('f_eps').value);
+            const eps = parseFloat(document.getElementById('f_eps').value) / 100;
 
-            // Показ предупреждения
-            document.getElementById('f_warn').style.display = epsRaw > 50 ? 'block' : 'none';
-            
-            const eps = epsRaw / 100;
             const t1 = 3 / Math.pow(Math.tan(a0), 2);
             const t2 = Math.pow((1 - eps), 2);
             const t3 = 1 / Math.pow(Math.sin(a0), 2);
-
             const force = Math.PI * Math.pow(r0, 2) * (p - p0) * (t1 * t2 - t3);
             
-            // Вывод результата (если не число - выведет 0.00)
-            document.getElementById('res_f').innerText = isNaN(force) ? "0.00" : (force > 0 ? force.toFixed(2) : "0.00");
+            document.getElementById('res_f').innerText = (force > 0 ? force.toFixed(2) : "0.00");
         }
 
         function calcPressure() {
@@ -104,12 +94,9 @@
             const a0 = parseFloat(document.getElementById('p_alpha').value) * Math.PI / 180;
             const mass = parseFloat(document.getElementById('p_mass').value);
             const p0_m = parseFloat(document.getElementById('p_p0').value);
-            const epsRaw = parseFloat(document.getElementById('p_eps').value);
+            const eps = parseFloat(document.getElementById('p_eps').value) / 100;
 
-            document.getElementById('p_warn_eps').style.display = epsRaw > 50 ? 'block' : 'none';
-            
             const F_load = mass * g;
-            const eps = epsRaw / 100;
             const t1 = 3 / Math.pow(Math.tan(a0), 2);
             const t2 = Math.pow((1 - eps), 2);
             const t3 = 1 / Math.pow(Math.sin(a0), 2);
@@ -118,14 +105,11 @@
             if (geom > 0) {
                 const p_pa = F_load / (Math.PI * Math.pow(r0, 2) * geom) + (p0_m * 1000000);
                 const p_mpa = p_pa / 1000000;
-                
-                document.getElementById('res_p').innerText = isNaN(p_mpa) ? "0.000" : p_mpa.toFixed(3);
-                document.getElementById('p_warn_safety').style.display = p_mpa > 0.3 ? 'block' : 'none';
+                document.getElementById('res_p').innerText = p_mpa.toFixed(3);
                 
                 const work = F_load * (l0 / 1000 * eps);
-                document.getElementById('res_work').innerText = isNaN(work) ? "—" : work.toFixed(2);
-                document.getElementById('work-card').style.border = "2px solid #ffeb3b";
-                } else {
+                document.getElementById('res_work').innerText = work.toFixed(2);
+            } else {
                 document.getElementById('res_p').innerText = "Error";
                 document.getElementById('res_work').innerText = "—";
             }
