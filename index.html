@@ -30,15 +30,15 @@
 
     <div class="card">
         <h2>1. Force Calculation</h2>
-        <div class="input-group"><label>Initial Length L0 (mm)</label><input type="number" id="f_l0" placeholder="e.g. 270"></div>
-        <div class="input-group"><label>Initial Radius r0 (mm)</label><input type="number" id="f_r0" step="0.1" placeholder="e.g. 5.5"></div>
-        <div class="input-group"><label>Initial Angle alpha0 (deg)</label><input type="number" id="f_alpha" placeholder="e.g. 27"></div>
-        <div class="input-group"><label>Working Pressure P (MPa)</label><input type="number" id="f_p" step="0.01" placeholder="e.g. 0.2"></div>
-        <div class="input-group"><label>Starting pressure (for inflating the balloon), MPa</label><input type="number" id="f_p0" step="0.01" placeholder="e.g. 0.11"></div>
-        <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="f_eps" placeholder="e.g. 10"></div>
+        <div class="input-group"><label>Initial Length L0 (mm)</label><input type="number" id="f_l0" placeholder="270"></div>
+        <div class="input-group"><label>Initial Radius r0 (mm)</label><input type="number" id="f_r0" step="0.1" placeholder="5.5"></div>
+        <div class="input-group"><label>Initial Angle alpha0 (deg)</label><input type="number" id="f_alpha" placeholder="27"></div>
+        <div class="input-group"><label>Working Pressure P (MPa)</label><input type="number" id="f_p" step="0.01" placeholder="0.2"></div>
+        <div class="input-group"><label>Starting pressure (for inflation), MPa</label><input type="number" id="f_p0" step="0.01" placeholder="0.11"></div>
+        <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="f_eps" placeholder="10"></div>
 
         <button onclick="calcForce()">CALCULATE FORCE</button>
-        <div id="f_warn" class="warning">Warning: Strain ε > 50% is physically unlikely.</div>
+        <div id="f_warn" class="warning">Warning: Strain ε > 50% is unlikely.</div>
 
         <div class="result">
             <span class="res-label">Resulting Force:</span>
@@ -48,16 +48,16 @@
 
     <div class="card">
         <h2>2. Pressure Calculation</h2>
-        <div class="input-group"><label>Initial Length L0 (mm)</label><input type="number" id="p_l0" placeholder="e.g. 270"></div>
-        <div class="input-group"><label>Initial Radius r0 (mm)</label><input type="number" id="p_r0" step="0.1" placeholder="e.g. 5.5"></div>
-        <div class="input-group"><label>Initial Angle alpha0 (deg)</label><input type="number" id="p_alpha" placeholder="e.g. 27"></div>
-        <div class="input-group"><label>Load Mass (kg)</label><input type="number" id="p_mass" placeholder="e.g. 5"></div>
-        <div class="input-group"><label>Starting pressure (for inflating the balloon), MPa</label><input type="number" id="p_p0" step="0.01" placeholder="e.g. 0.11"></div>
-        <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="p_eps" placeholder="e.g. 10"></div>
+        <div class="input-group"><label>Initial Length L0 (mm)</label><input type="number" id="p_l0" placeholder="270"></div>
+        <div class="input-group"><label>Initial Radius r0 (mm)</label><input type="number" id="p_r0" step="0.1" placeholder="5.5"></div>
+        <div class="input-group"><label>Initial Angle alpha0 (deg)</label><input type="number" id="p_alpha" placeholder="27"></div>
+        <div class="input-group"><label>Load Mass (kg)</label><input type="number" id="p_mass" placeholder="5"></div>
+        <div class="input-group"><label>Starting pressure (for inflation), MPa</label><input type="number" id="p_p0" step="0.01" placeholder="0.11"></div>
+        <div class="input-group"><label>Strain epsilon ε (%)</label><input type="number" id="p_eps" placeholder="10"></div>
 
         <button onclick="calcPressure()">CALCULATE PRESSURE</button>
-        <div id="p_warn_eps" class="warning">Warning: Strain ε > 50% is physically unlikely.</div>
-        <div id="p_warn_safety" class="warning">CRITICAL: Pressure > 0.3 MPa! Check cable sheath.</div>
+        <div id="p_warn_eps" class="warning">Warning: Strain ε > 50% is unlikely.</div>
+        <div id="p_warn_safety" class="warning">CRITICAL: Pressure > 0.3 MPa!</div>
 
         <div class="result">
             <span class="res-label">Required Pressure:</span>
@@ -77,19 +77,16 @@
         const g = 9.81;
 
         function calcForce() {
-            const r0_val = document.getElementById('f_r0').value;
-            const a0_val = document.getElementById('f_alpha').value;
-            const p_val = document.getElementById('f_p').value;
-            const p0_val = document.getElementById('f_p0').value;
-            const eps_val = document.getElementById('f_eps').value;
+            const r0 = parseFloat(document.getElementById('f_r0').value) / 1000;
+            const a0 = parseFloat(document.getElementById('f_alpha').value) * Math.PI / 180;
+            const p = parseFloat(document.getElementById('f_p').value) * 1000000;
+            const p0 = parseFloat(document.getElementById('f_p0').value) * 1000000;
+            const epsRaw = parseFloat(document.getElementById('f_eps').value);
 
-            if(!r0_val  !a0_val  !p_val  !p0_val  !eps_val) return;
-
-            const r0 = parseFloat(r0_val) / 1000;
-            const a0 = parseFloat(a0_val) * Math.PI / 180;
-            const p = parseFloat(p_val) * 1000000;
-            const p0 = parseFloat(p0_val) * 1000000;
-            const epsRaw = parseFloat(eps_val);
+            if (isNaN(r0)  isNaN(a0)  isNaN(p)  isNaN(p0)  isNaN(epsRaw)) {
+                alert("Please fill all fields in Block 1");
+                return;
+            }
 
             document.getElementById('f_warn').style.display = epsRaw > 50 ? 'block' : 'none';
             const eps = epsRaw / 100;
@@ -103,21 +100,17 @@
         }
 
         function calcPressure() {
-            const l0_val = document.getElementById('p_l0').value;
-            const r0_val = document.getElementById('p_r0').value;
-            const a0_val = document.getElementById('p_alpha').value;
-            const mass_val = document.getElementById('p_mass').value;
-            const p0_val = document.getElementById('p_p0').value;
-            const eps_val = document.getElementById('p_eps').value;
+            const l0 = parseFloat(document.getElementById('p_l0').value);
+            const r0 = parseFloat(document.getElementById('p_r0').value) / 1000;
+            const a0 = parseFloat(document.getElementById('p_alpha').value) * Math.PI / 180;
+            const mass = parseFloat(document.getElementById('p_mass').value);
+            const p0_m = parseFloat(document.getElementById('p_p0').value);
+            const epsRaw = parseFloat(document.getElementById('p_eps').value);
 
-            if(!l0_val  !r0_val  !a0_val  !mass_val  !p0_val || !eps_val) return;
-
-            const l0 = parseFloat(l0_val);
-            const r0 = parseFloat(r0_val) / 1000;
-            const a0 = parseFloat(a0_val) * Math.PI / 180;
-            const mass = parseFloat(mass_val);
-            const p0_m = parseFloat(p0_val);
-            const epsRaw = parseFloat(eps_val);
+            if (isNaN(l0)  isNaN(r0)  isNaN(a0)  isNaN(mass)  isNaN(p0_m) || isNaN(epsRaw)) {
+                alert("Please fill all fields in Block 2");
+                return;
+            }
 
             document.getElementById('p_warn_eps').style.display = epsRaw > 50 ? 'block' : 'none';
             const eps = epsRaw / 100;
@@ -134,8 +127,7 @@
                 document.getElementById('res_p').innerText = p_mpa.toFixed(3);
                 document.getElementById('p_warn_safety').style.display = p_mpa > 0.3 ? 'block' : 'none';
                 
-                const deltaL = (l0 / 1000) * eps;
-                const work = F_load * deltaL;
+                const work = F_load * (l0 / 1000 * eps);
                 document.getElementById('res_work').innerText = work.toFixed(2);
                 document.getElementById('work-card').style.border = "2px solid #ffeb3b";
             } else {
