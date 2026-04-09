@@ -2,140 +2,253 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BerMuscle - Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BerMuscle Engineering Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin-bottom: 30px; }
-        h2 { color: #333; text-align: center; margin-top: 0; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-size: 14px; color: #666; }
-        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; font-weight: bold; }
-        button:hover { background: #0056b3; }
-        .result { margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 6px; text-align: center; }
-        .force-val { font-size: 24px; font-weight: bold; color: #007bff; }
-        .warning { color: #d9534f; font-size: 13px; margin-top: 10px; font-weight: bold; display: none; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; margin: 0; }
+        h1 { color: #ffeb3b; text-align: center; margin-bottom: 30px; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #ffeb3b; padding-bottom: 10px; }
+        .card { background: #1e1e1e; padding: 30px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.5); width: 100%; max-width: 450px; margin-bottom: 30px; border: 1px solid #333; transition: 0.3s; }
+        .card:hover { border-color: #ffeb3b; }
+        h2 { color: #ffeb3b; text-align: center; margin-top: 0; text-transform: uppercase; font-size: 18px; margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; position: relative; }
+        label { display: block; margin-bottom: 5px; font-size: 13px; color: #aaaaaa; }
+        input { width: 100%; padding: 12px; background: #2c2c2c; border: 1px solid #444; border-radius: 6px; color: #ffffff; font-size: 15px; outline: none; box-sizing: border-box; }
+        input:focus { border-color: #ffeb3b; background: #333; }
+        button { width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
+        button:hover { background: #0056b3; transform: translateY(-1px); }
+        .result { margin-top: 25px; padding: 20px; background: #262626; border-radius: 8px; text-align: center; border: 1px solid #444; }
+        .res-label { font-size: 14px; color: #aaaaaa; margin-bottom: 5px; }
+        .res-val { font-size: 32px; font-weight: bold; color: #ffeb3b; display: block; }
+        .res-unit { font-size: 14px; color: #ffeb3b; }
+        .warning { color: #ff5252; font-size: 13px; margin-top: 15px; font-weight: bold; display: none; text-align: center; padding: 10px; background: rgba(255,82,82,0.1); border-radius: 6px; }
+        
+        /* Стили для графика */
+        .chart-container { width: 100%; max-width: 450px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.5); border: 1px solid #333; margin-bottom: 30px; display: none; }
+        
+        /* Стили для блока работы */
+        #work-card { border: 2px solid #ffeb3b; background: #262626; display: none; }
+        #work-card h2 { color: #ffeb3b; }
+        #work-card .res-val { color: #ffeb3b; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Force Calculation</h2>
-    <div class="input-group">
-        <label>Initial Length L0 (mm)</label>
-        <input type="number" id="f_l0" value="270">
-    </div>
-    <div class="input-group">
-        <label>Initial Radius r0 (mm)</label>
-        <input type="number" id="f_r0" value="5.5" step="0.1">
-    </div>
-    <div class="input-group">
-        <label>Initial Angle alpha0 (deg)</label>
-        <input type="number" id="f_alpha" value="27">
-    </div>
-    <div class="input-group">
-        <label>Working Pressure P (MPa)</label>
-        <input type="number" id="f_p" value="0.2" step="0.01">
-    </div>
-    <div class="input-group">
-        <label>Starting pressure (for inflating the balloon), MPa</label>
-        <input type="number" id="f_p0" value="0.11" step="0.01">
-    </div>
-    <div class="input-group">
-        <label>Strain epsilon ε (%)</label>
-        <input type="number" id="f_eps" value="10">
-    </div>
+    <h1>BerMuscle Engineering Hub</h1>
 
-    <button onclick="calculateForce()">CALCULATE FORCE</button>
-    <div id="f_warn" class="warning">Your air muscle is not capable of contracting like that (the epsilon will be smaller)</div>
+    <div class="card">
+        <h2>1. Force Calculation</h2>
+        <div class="input-group">
+            <label>Initial Length L0 (mm)</label>
+            <input type="number" id="f_l0" value="270">
+        </div>
+        <div class="input-group">
+            <label>Initial Radius r0 (mm)</label>
+            <input type="number" id="f_r0" value="5.5" step="0.1">
+        </div>
+        <div class="input-group">
+            <label>Initial Angle alpha0 (deg)</label>
+            <input type="number" id="f_alpha" value="27">
+        </div>
+        <div class="input-group">
+            <label>Working Pressure P (MPa)</label>
+            <input type="number" id="f_p" value="0.2" step="0.01">
+        </div>
+        <div class="input-group">
+            <label>Starting inflation pressure P0 (MPa)</label>
+            <input type="number" id="f_p0" value="0.11" step="0.01">
+        </div>
+        <div class="input-group">
+            <label>Strain epsilon ε (%)</label>
+            <input type="number" id="f_eps" value="10">
+        </div>
+        <button onclick="uiCalculateForce()">CALCULATE FORCE & PLOT</button>
+        <div id="f_warn" class="warning">Warning: Strain ε > 50% is physically unlikely for this type of muscle.</div>
 
-    <div class="result">
-        <div>Resulting Force:</div>
-        <div class="force-val" id="res_f">0.00</div>
-        <span>Newtons (N)</span>
-    </div>
-</div>
-
-<div class="card">
-    <h2>Pressure Calculation</h2>
-    <div class="input-group">
-        <label>Initial Length L0 (mm)</label>
-        <input type="number" id="p_l0" value="270">
-    </div>
-    <div class="input-group">
-        <label>Initial Radius r0 (mm)</label>
-        <input type="number" id="p_r0" value="5.5" step="0.1">
-    </div>
-    <div class="input-group">
-        <label>Initial Angle alpha0 (deg)</label>
-        <input type="number" id="p_alpha" value="27">
-    </div>
-    <div class="input-group">
-        <label>Load Mass (kg)</label>
-        <input type="number" id="p_mass" value="5">
-    </div>
-    <div class="input-group">
-        <label>Starting pressure (for inflating the balloon), MPa</label>
-        <input type="number" id="p_p0" value="0.11" step="0.01">
-    </div>
-    <div class="input-group">
-        <label>Strain epsilon ε (%)</label>
-        <input type="number" id="p_eps" value="10">
+        <div class="result">
+            <span class="res-label">Max Theoretical Force:</span>
+            <span class="res-val" id="res_f">0.00</span>
+            <span class="res-unit">Newtons (N)</span>
+        </div>
     </div>
 
-    <button onclick="calculatePressure()">CALCULATE PRESSURE</button>
-    <div id="p_warn_eps" class="warning">Your air muscle is not capable of contracting like that (the epsilon will be smaller)</div>
-    <div id="p_warn_safety" class="warning">Check the parameters of your cable sheath, it may not withstand</div><div class="result">
-        <div>Required Pressure:</div>
-        <div class="force-val" id="res_p">0.00</div>
-        <span>MegaPascals (MPa)</span>
+    <div id="chart-section" class="chart-container">
+        <h2>Force vs Pressure Dynamics</h2>
+        <canvas id="forceChart"></canvas>
     </div>
-</div>
 
-<script>
-    const g = 9.81;
+    <div class="card">
+        <h2>2. Pressure Calculation</h2>
+        <div class="input-group">
+            <label>Initial Length L0 (mm)</label>
+            <input type="number" id="p_l0" value="270">
+        </div>
+        <div class="input-group">
+            <label>Initial Radius r0 (mm)</label>
+            <input type="number" id="p_r0" value="5.5" step="0.1">
+        </div>
+        <div class="input-group">
+            <label>Initial Angle alpha0 (deg)</label>
+            <input type="number" id="p_alpha" value="27">
+        </div>
+        <div class="input-group">
+            <label>Load Mass (kg)</label>
+            <input type="number" id="p_mass" value="5">
+        </div>
+        <div class="input-group">
+            <label>Starting inflation pressure P0 (MPa)</label>
+            <input type="number" id="p_p0" value="0.11" step="0.01">
+        </div>
+        <div class="input-group">
+            <label>Strain epsilon ε (%)</label>
+            <input type="number" id="p_eps" value="10">
+        </div>
 
-    function calculateForce() {
-        const r0 = parseFloat(document.getElementById('f_r0').value) / 1000;
-        const a0 = parseFloat(document.getElementById('f_alpha').value) * Math.PI / 180;
-        const p = parseFloat(document.getElementById('f_p').value) * 1000000;
-        const p0 = parseFloat(document.getElementById('f_p0').value) * 1000000;
-        const epsInput = parseFloat(document.getElementById('f_eps').value);
+        <button onclick="uiCalculatePressure()">CALCULATE PRESSURE</button>
+        <div id="p_warn_eps" class="warning">Warning: Strain ε > 50% is physically unlikely.</div>
+        <div id="p_warn_safety" class="warning">CRITICAL: Required pressure > 0.3 MPa. Check cable sheath strength!</div>
 
-        document.getElementById('f_warn').style.display = epsInput > 50 ? 'block' : 'none';
-        const eps = epsInput / 100;
+        <div class="result">
+            <span class="res-label">Required Working Pressure:</span>
+            <span class="res-val" id="res_p">0.000</span>
+            <span class="res-unit">MegaPascals (MPa)</span>
+        </div>
+    </div>
 
-        const term1 = 3 / Math.pow(Math.tan(a0), 2);
-        const term2 = Math.pow((1 - eps), 2);
-        const term3 = 1 / Math.pow(Math.sin(a0), 2);
+    <div id="work-card" class="card">
+        <h2>3. Mechanical Work Performed</h2>
+        <div class="result">
+            <span class="res-label">Useful Work (W = F_load * ΔL):</span>
+            <span class="res-val" id="res_work">0.00</span>
+            <span class="res-unit">Joules (J)</span>
+        </div>
+    </div>
 
-        const force = Math.PI * Math.pow(r0, 2) * (p - p0) * (term1 * term2 - term3);
-        document.getElementById('res_f').innerText = force > 0 ? force.toFixed(2) : "0.00";
-    }
+    <script>
+        const g = 9.81;
+        let forceChart = null; // Глобальная переменная для графика
 
-    function calculatePressure() {
-        const r0 = parseFloat(document.getElementById('p_r0').value) / 1000;
-        const a0 = parseFloat(document.getElementById('p_alpha').value) * Math.PI / 180;
-        const mass = parseFloat(document.getElementById('p_mass').value);
-        const p0_mpa = parseFloat(document.getElementById('p_p0').value);
-        const epsInput = parseFloat(document.getElementById('p_eps').value);
+        // --- Вспомогательная функция расчета силы (чистая математика) ---
+        function calculateForceRaw(r0_mm, a0_deg, p_mpa, p0_mpa, eps_percent) {
+            const r0 = r0_mm / 1000;
+            const a0 = a0_deg * Math.PI / 180;
+            const p_pa = p_mpa * 1000000;
+            const p0_pa = p0_mpa * 1000000;
+            const eps = eps_percent / 100;
 
-        document.getElementById('p_warn_eps').style.display = epsInput > 50 ? 'block' : 'none';
-        const eps = epsInput / 100;
+            if (eps > 0.5) return -1; // Лимит по эпсилон
 
-        const F = mass * g;
-        const term1 = 3 / Math.pow(Math.tan(a0), 2);
-        const term2 = Math.pow((1 - eps), 2);
-        const term3 = 1 / Math.pow(Math.sin(a0), 2);
+            const term1 = 3 / Math.pow(Math.tan(a0), 2);
+            const term2 = Math.pow((1 - eps), 2);
+            const term3 = 1 / Math.pow(Math.sin(a0), 2);
 
-        const geom = (term1 * term2 - term3);
-        const p_req_pa = F / (Math.PI * Math.pow(r0, 2) * geom) + (p0_mpa * 1000000);
-        const p_req_mpa = p_req_pa / 1000000;
+            const force = Math.PI * Math.pow(r0, 2) * (p_pa - p0_pa) * (term1 * term2 - term3);
+            return force > 0 ? force : 0;
+        }
 
-        document.getElementById('p_warn_safety').style.display = p_req_mpa > 0.3 ? 'block' : 'none';
-        document.getElementById('res_p').innerText = p_req_mpa > 0 ? p_req_mpa.toFixed(3) : "Error";
-    }
-</script>
+        // --- Основная функция первого блока (Интерфейс + График) ---
+        function uiCalculateForce() {
+            const l0 = parseFloat(document.getElementById('f_l0').value);
+            const r0 = parseFloat(document.getElementById('f_r0').value);
+            const a0 = parseFloat(document.getElementById('f_alpha').value);
+            const p = parseFloat(document.getElementById('f_p').value);
+            const p0 = parseFloat(document.getElementById('f_p0').value);
+            const eps = parseFloat(document.getElementById('f_eps').value);
 
+            // Проверка эпсилон
+            document.getElementById('f_warn').style.display = eps > 50 ? 'block' : 'none';
+            // Расчет точки
+            const maxForce = calculateForceRaw(r0, a0, p, p0, eps);
+            document.getElementById('res_f').innerText = maxForce.toFixed(2);
+
+            // --- Построение графика ---
+            const chartSection = document.getElementById('chart-section');
+            chartSection.style.display = 'block';
+
+            const ctx = document.getElementById('forceChart').getContext('with');
+            
+            // Генерируем данные для графика (от 0 до введенного P)
+            const pressures = [];
+            const forces = [];
+            const steps = 10;
+            for (let i = 0; i <= steps; i++) {
+                const currentP = p0 + (i * (p - p0) / steps);
+                pressures.push(currentP.toFixed(2));
+                forces.push(calculateForceRaw(r0, a0, currentP, p0, eps).toFixed(2));
+            }
+
+            // Если график уже есть, уничтожаем старый
+            if (forceChart) { forceChart.destroy(); }
+
+            // Создаем новый график
+            forceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: pressures,
+                    datasets: [{
+                        label: 'Force (N)',
+                        data: forces,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        borderWith: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#ffeb3b',
+                        pointBorderColor: '#121212'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: 'Pressure (MPa)', color: '#aaaaaa' }, ticks: { color: '#aaaaaa' }, grid: { color: '#333' } },
+                        y: { title: { display: true, text: 'Force (N)', color: '#aaaaaa' }, ticks: { color: '#aaaaaa' }, grid: { color: '#333' }, beginAtZero: true }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // --- Основная функция второго блока (Давление + Работа) ---
+        function uiCalculatePressure() {
+            const l0 = parseFloat(document.getElementById('p_l0').value);
+            const r0_m = parseFloat(document.getElementById('p_r0').value) / 1000;
+            const a0 = parseFloat(document.getElementById('p_alpha').value) * Math.PI / 180;
+            const mass = parseFloat(document.getElementById('p_mass').value);
+            const p0_mpa = parseFloat(document.getElementById('p_p0').value);
+            const epsInput = parseFloat(document.getElementById('p_eps').value);
+
+            // Проверка эпсилон
+            document.getElementById('p_warn_eps').style.display = epsInput > 50 ? 'block' : 'none';
+            const eps = epsInput / 100;
+
+            const F_load = mass * g;
+            
+            // Геометрические члены
+            const term1 = 3 / Math.pow(Math.tan(a0), 2);
+            const term2 = Math.pow((1 - eps), 2);
+            const term3 = 1 / Math.pow(Math.sin(a0), 2);
+            const geom = (term1 * term2 - term3);
+
+            // Расчет давления
+            const p_req_pa = F_load / (Math.PI * Math.pow(r0_m, 2) * geom) + (p0_mpa * 1000000);
+            const p_req_mpa = p_req_pa / 1000000;
+
+            // Вывод давления
+            const resPField = document.getElementById('res_p');
+            if (p_req_mpa > 0 && p_req_mpa < 10) { // Валидация разумного диапазона
+                resPField.innerText = p_req_mpa.toFixed(3);
+                document.getElementById('p_warn_safety').style.display = p_req_mpa > 0.3 ? 'block' : 'none';
+                // --- Расчет работы ---
+                const deltaL_m = (l0 / 1000) * eps; // Изменение длины в метрах
+                const work_j = F_load * deltaL_m;
+                
+                document.getElementById('work-card').style.display = 'block';
+                document.getElementById('res_work').innerText = work_j.toFixed(2);
+            } else {
+                resPField.innerText = "Error";
+                document.getElementById('work-card').style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
